@@ -1,4 +1,4 @@
-import { anthropic } from "@ai-sdk/anthropic";
+import { createAnthropic } from "@ai-sdk/anthropic";
 import {
   LanguageModelV1,
   LanguageModelV1StreamPart,
@@ -514,5 +514,7 @@ export function getLanguageModel() {
     return new MockLanguageModel("mock-claude-sonnet-4-0");
   }
 
+  const baseURL = process.env.ANTHROPIC_BASE_URL || undefined;
+  const anthropic = createAnthropic({ apiKey, ...(baseURL ? { baseURL } : {}) });
   return anthropic(MODEL);
 }
