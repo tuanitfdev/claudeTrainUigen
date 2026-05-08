@@ -4,6 +4,7 @@ import {
   LanguageModelV1StreamPart,
   LanguageModelV1Message,
 } from "@ai-sdk/provider";
+import { ProxyAgent, fetch as undiciFetch } from "undici";
 
 const MODEL = "claude-haiku-4-5";
 
@@ -515,6 +516,21 @@ export function getLanguageModel() {
   }
 
   const baseURL = process.env.ANTHROPIC_BASE_URL || undefined;
-  const anthropic = createAnthropic({ apiKey, ...(baseURL ? { baseURL } : {}) });
+  const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+  const fetchFn = proxyUrl
+    ? (input: RequestInfo | URL, init?: RequestInit) => {
+        const dispatcher = new ProxyAgent(proxyUrl);
+        return undiciFetch(input as Parameters<typeof undiciFetch>[0], {
+          ...(init as object),
+          dispatcher,
+        }) as unknown as Response;
+      }
+    : undefined;
+
+  const anthropic = createAnthropic({
+    apiKey,
+    ...(baseURL ? { baseURL } : {}),
+    ...(fetchFn ? { fetch: fetchFn } : {}),
+  });
   return anthropic(MODEL);
 }
